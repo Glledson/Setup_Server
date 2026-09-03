@@ -22,3 +22,6 @@ Execute o comando abaixo diretamente no servidor recém-instalado (requer privil
 
 ```bash
 bash -c "$(curl -fsSL [https://raw.githubusercontent.com/Glledson/Setup_Server/main/install.sh](https://raw.githubusercontent.com/Glledson/Setup_Server/main/install.sh))"
+
+
+teste
