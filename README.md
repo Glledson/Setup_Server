@@ -1,8 +1,8 @@
-#  Server Setup Engine
+# Server Setup Engine
 
 > Automation framework for base hardening, system provisioning, and infrastructure service deployment on Debian-based Linux servers.
 
-![Debian](https://img.shields.io/badge/Debian-12%20(Bookworm)-A81D33?style=flat-square&logo=debian&logoColor=white)
+![Debian](https://img.shields.io/badge/Debian-13%20(Trixie)-A81D33?style=flat-square&logo=debian&logoColor=white)
 ![Shell Script](https://img.shields.io/badge/Shell_Script-Bash-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)
 
