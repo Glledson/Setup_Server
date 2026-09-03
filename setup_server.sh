@@ -1,8 +1,9 @@
 #!/bin/bash
 # upisp-banner.sh — Configura banner institucional SSH, ambiente root e sistema
-# Autor: Você
+# Autor: Glledson Olliver https://www.linkedin.com/in/gledsom-oliveira/
 # Data: 2026-09-03
-# Descrição: Menu interativo (dialog) para escolher o que executar,
+# Descrição: 
+#            Menu interativo (dialog) para escolher o que executar,
 #            com tela de progresso durante update/upgrade e instalação de pacotes.
 
 set -euo pipefail
