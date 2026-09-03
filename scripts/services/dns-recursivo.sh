@@ -1,5 +1,3 @@
-Você está sem armazenamento há 21 dias … O armazenamento é insuficiente. Não é possível salvar no Drive, fazer backup no Google Fotos nem usar o Gmail. Aproveite 30 GB de armazenamento pagando R$ 1 por 3 meses R$ 4,50.
-100%
 #!/bin/bash
 # =============================================================================
 # Script de Provisionamento: DNS Recursivo (Unbound) + BGP (FRR)
