@@ -148,6 +148,11 @@ instalar_pacotes() {
         whois
         dnsutils
         net-tools
+        ethtool
+        rsync
+        gnupg
+        dnstop
+        bind9-dnsutils
     )
 
     local total=${#pacotes[@]}
