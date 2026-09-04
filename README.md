@@ -235,7 +235,7 @@ One tool, many server roles:
 🌐 DNS Server        📊 Monitoring Server   📝 Logging Server    🚦 Network Tools Server
 └── DNS Recursive    └── Zabbix             └── Graylog          └── Speedtest
 └── DNS Reverse      └── SmokePing                               └── nPerf
-                                                                   └── NTP
+                                                                 └── NTP
 ```
 
 ---
