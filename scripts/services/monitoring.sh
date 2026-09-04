@@ -1,3 +1,5 @@
+Você está sem armazenamento há 21 dias … O armazenamento é insuficiente. Não é possível salvar no Drive, fazer backup no Google Fotos nem usar o Gmail. Aproveite 30 GB de armazenamento pagando R$ 1 por 3 meses R$ 4,50.
+100%
 #!/bin/bash
 set -euo pipefail
 
@@ -43,12 +45,13 @@ dpkg -i zabbix-release_latest_7.4+debian13_all.deb
 exibir_resultado $?
 
 # Repositório Grafana
-wget https://dl.grafana.com/grafana/release/13.2.1/grafana_13.2.1_33191028959_linux_amd64.deb
-dpkg -i grafana_13.2.1_33191028959_linux_amd64.deb
+wget https://dl.grafana.com/oss/release/grafana_12.0.0+security~01_amd64.deb
+dpkg -i grafana_12.0.0+security~01_amd64.deb
 exibir_resultado $?
 
 # 3. Atualização Geral do Sistema
 echo -e "${BLUE}>>> Atualizando pacotes do sistema (isso pode demorar)...${RESET}"
+apt-get update -y > /dev/null 2>&1
 apt-get upgrade -y > /dev/null 2>&1
 apt-get dist-upgrade -y > /dev/null 2>&1
 exibir_resultado $?
@@ -59,7 +62,7 @@ pacotes=(
   "zabbix-frontend-php"
   "zabbix-apache-conf"
   "zabbix-sql-scripts"
-  "zabbix-agent"
+  "zabbix-agent2"
 
   "adduser"
   "libfontconfig1"
@@ -104,9 +107,9 @@ cp /etc/apache2/sites-enabled/000-default.conf /etc/apache2/sites-enabled/000-de
 cat <<EOF > /etc/apache2/sites-enabled/000-default.conf
 <VirtualHost *:80>
     ServerAdmin webmaster@localhost
-    DocumentRoot /usr/share/zabbix
+    DocumentRoot usr/share/zabbix/ui
 
-    <Directory /usr/share/zabbix>
+    <Directory usr/share/zabbix/ui>
         Options FollowSymLinks
         AllowOverride All
         Require all granted
@@ -138,18 +141,24 @@ EOF
 exibir_resultado $?
 
 echo -ne "Importando esquema inicial e dados para o Zabbix... "
-zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 -uzabbix -p"ZABBIX-UPISP" zabbix
+zcat usr/share/zabbix/ui/sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 -uzabbix -p"ZABBIX-UPISP" zabbix
 exibir_resultado $?
 
 mariadb -u root -p"ZABBIX-UPISP" <<EOF
 SET GLOBAL log_bin_trust_function_creators = 0;
 EOF
 
-# 6. Configuração do Zabbix Server  
+# 6. Configuração do PHP para Zabbix
+echo -e "${BLUE}>>> Configurando PHP para Zabbix...${RESET}"
+sed -i 's/post_max_size = .*/post_max_size = 32M/' /etc/php/*/apache2/php.ini
+sed -i 's/max_execution_time = .*/max_execution_time = 300/' /etc/php/*/apache2/php.ini
+sed -i 's/max_input_time = 60/max_input_time = 300/' /etc/php/*     /apache2/php.ini
+
+# 7. Configuração do Zabbix Server  
 echo -e "${BLUE}>>> Configurando Zabbix Server...${RESET}"
 sed -i "s/# DBPassword=/DBPassword=ZABBIX-UPISP/" /etc/zabbix/zabbix_server.conf
 exibir_resultado $?
-systemctl restart zabbix-server zabbix-agent apache2
+systemctl restart zabbix-server zabbix-agent2 apache2
 exibir_resultado $?
 
 # Finalização

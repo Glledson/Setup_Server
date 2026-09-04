@@ -1,56 +1,75 @@
-# Setup Server
+<div align="center">
 
-> **Server provisioning and infrastructure automation for ISP environments.**
+# ⚙️ Setup Server
 
-![Debian](https://img.shields.io/badge/Debian-12%20Bookworm-A81D33?style=flat-square\&logo=debian\&logoColor=white)
-![Bash](https://img.shields.io/badge/Bash-5.x-4EAA25?style=flat-square\&logo=gnu-bash\&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Linux-333333?style=flat-square\&logo=linux\&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-2F80ED?style=flat-square)
+**Server provisioning and infrastructure automation for ISP environments.**
 
----
+![Debian](https://img.shields.io/badge/Debian-12%20Bookworm-A81D33?style=for-the-badge&logo=debian&logoColor=white)
+![Bash](https://img.shields.io/badge/Bash-5.x-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Linux-333333?style=for-the-badge&logo=linux&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-2F80ED?style=for-the-badge)
 
-## Overview
+![GitHub last commit](https://img.shields.io/github/last-commit/Glledson/Setup_Server?style=flat-square&color=orange)
+![GitHub stars](https://img.shields.io/github/stars/Glledson/Setup_Server?style=flat-square&color=yellow)
+![GitHub issues](https://img.shields.io/github/issues/Glledson/Setup_Server?style=flat-square&color=red)
+![Maintained](https://img.shields.io/badge/Maintained%3F-yes-brightgreen?style=flat-square)
 
-**Setup Server** is a modular Bash-based provisioning tool designed to automate the preparation, configuration, and deployment of Linux servers used in **Internet Service Provider (ISP) infrastructure**.
+*Turn a fresh Debian install into a fully hardened, monitored, production-ready ISP server — with one command.*
 
-The project consolidates recurring operational procedures into a standardized workflow, reducing manual intervention and providing a consistent baseline across servers.
+[**Install**](#-installation) · [**Services**](#-service-catalog) · [**Architecture**](#-architecture) · [**Contributing**](#-contributing)
 
-It is intended for environments where services such as DNS, monitoring, logging, network diagnostics, IP address management, NTP, and other infrastructure components need to be deployed repeatedly and predictably.
-
----
-
-## Purpose
-
-Deploying a production server involves more than installing an operating system.
-
-A typical provisioning process may require:
-
-* System updates
-* Repository configuration
-* Essential package installation
-* SSH configuration
-* Access control
-* Administrative environment customization
-* Monitoring tools
-* Network diagnostics
-* DNS infrastructure
-* Time synchronization
-* Logging
-* IP address management
-* RPKI infrastructure
-* Performance testing services
-
-These procedures are often repeated across multiple servers and environments.
-
-**Setup Server exists to standardize this process.**
-
-The objective is not to replace administrative decisions, but to automate the repetitive and well-defined parts of server provisioning.
+</div>
 
 ---
 
-## Architecture
+### 🚀 TL;DR
 
-The project follows a modular architecture where system preparation, shared functions, configuration files, and service deployment are separated into distinct components.
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Glledson/Setup_Server/main/install.sh)"
+```
+
+Run it as `root` on a clean Debian 12 box, pick what you need from the interactive menu, and walk away with a hardened, monitored server. Full details below. ⬇️
+
+---
+
+## 📋 Table of Contents
+
+| | | |
+|---|---|---|
+| [🔎 Overview](#-overview) | [🏗️ Architecture](#-architecture) | [🔄 Provisioning Workflow](#-provisioning-workflow) |
+| [✨ Features](#-features) | [🧩 Service Catalog](#-service-catalog) | [🖥️ Interactive Interface](#-interactive-interface) |
+| [📦 Installation](#-installation) | [📝 Logging](#-logging) | [✅ Requirements](#-requirements) |
+| [⚠️ Operational Considerations](#-operational-considerations) | [🧭 Design Principles](#-design-principles) | [🗺️ Roadmap](#-roadmap) |
+| [🤝 Contributing](#-contributing) | [🔒 Security](#-security) | [📄 License](#-license) |
+
+---
+
+## 🔎 Overview
+
+Deploying a production server involves more than installing an OS. A typical provisioning run means:
+
+✅ System updates & repository configuration
+✅ Essential package installation
+✅ SSH hardening & access control
+✅ Administrative environment customization
+✅ Monitoring & network diagnostics
+✅ DNS infrastructure
+✅ Time synchronization
+✅ Logging
+✅ IP address management
+✅ RPKI infrastructure
+✅ Performance testing services
+
+Doing this by hand across dozens of servers doesn't scale — **Setup Server turns it into a repeatable, one-command workflow.**
+
+> The goal isn't to replace administrative judgment — it's to automate the repetitive, well-defined parts so engineers can focus on the decisions that actually matter.
+
+---
+
+## 🏗️ Architecture
+
+<details>
+<summary><b>Click to expand the directory tree</b></summary>
 
 ```text
 setup_server/
@@ -87,41 +106,20 @@ setup_server/
 └── README.md
 ```
 
-### `config/`
+</details>
 
-Contains configuration templates and system-level configuration files used during provisioning.
-
-### `lib/`
-
-Contains reusable Bash functions and utilities shared across provisioning modules.
-
-### `scripts/`
-
-Contains the primary system configuration stages.
-
-The numbered scripts establish the execution order for fundamental server preparation tasks.
-
-### `scripts/services/`
-
-Contains individual service provisioning modules.
-
-Each service is isolated into its own script, allowing the service catalog to evolve independently from the core provisioning workflow.
-
-### `setup_server.sh`
-
-The main interactive orchestrator.
-
-It provides the administrator with a `dialog`-based interface for selecting the operations to be executed.
-
-### `install.sh`
-
-Bootstrap script responsible for initiating the Setup Server installation process.
+| Path | Purpose |
+|------|---------|
+| 📁 `config/` | Configuration templates & system-level files |
+| 📁 `lib/` | Reusable Bash functions shared across modules |
+| 📁 `scripts/` | Numbered core system-preparation stages |
+| 📁 `scripts/services/` | One isolated script per service |
+| 🎛️ `setup_server.sh` | Interactive `dialog`-based orchestrator |
+| 🥾 `install.sh` | One-line bootstrap script |
 
 ---
 
-## Provisioning Workflow
-
-The general provisioning workflow can be represented as:
+## 🔄 Provisioning Workflow
 
 ```text
                     Debian Installation
@@ -154,133 +152,63 @@ The general provisioning workflow can be represented as:
                     Operational Server
 ```
 
-The administrator remains responsible for selecting the appropriate components for each server.
+The administrator always stays in control of which components go on which server.
 
 ---
 
-# Features
+## ✨ Features
 
-## System Preparation
+### 🖥️ System Preparation
+APT setup · full upgrade · admin utilities · Bash completion · Vim config · root shell customization — a consistent baseline on every box.
 
-The base system module provides common preparation tasks, including:
+### 🔐 SSH Configuration
+| Setting | Value |
+|---|---|
+| Protocol | SSH 2 only |
+| Root login | `PermitRootLogin prohibit-password` |
+| Custom port | **`29019`** |
+| Debian banner | Disabled |
+| Pre-auth banner | Enabled |
+| Validation | `sshd -t` before every restart |
 
-* APT repository configuration
-* System update and upgrade
-* Installation of administrative utilities
-* Bash completion
-* Vim configuration
-* Root shell customization
-* Standardized system environment
+> ⚠️ **Heads up:** confirm the new SSH port is allowed by your firewall *before* applying this remotely — nobody wants to get locked out of a box three states away.
 
----
+### 🛠️ Administrative Environment
+`fzf` · `grc` · `bash-completion` · colored output · custom `ls`/network aliases · standardized prompt.
 
-## SSH Configuration
+### 🔑 SSH Key Management
+Drops a predefined public key into `/root/.ssh/authorized_keys` with correct permissions.
 
-The SSH module applies a predefined baseline to the OpenSSH service.
+> 🔒 **Security note:** review and rotate embedded keys per your org's access-control policy.
 
-Current configuration includes:
-
-* SSH Protocol 2
-* `PermitRootLogin prohibit-password`
-* Custom SSH port
-* Debian SSH banner disabled
-* Pre-authentication banner
-* Configuration validation using `sshd -t`
-* Service restart after successful validation
-
-The current default SSH port configured by the project is:
-
-```text
-29019
-```
-
-> **Important:** When deploying remotely, ensure that the new SSH port is permitted by the network and firewall configuration before applying the change.
+### 🪧 Login Banners
+- **Pre-auth:** `/etc/issue.net` shows an access notice before login.
+- **Post-auth:** dynamic profile script prints hostname, local IP, date/time, and an access notice on every login.
 
 ---
 
-## Administrative Environment
+## 🧩 Service Catalog
 
-The project provides a standardized environment for the `root` account.
+| Service | Technology / Purpose |
+|---|---|
+| 📊 Monitoring | Zabbix Agent 2 |
+| 📈 SmokePing | Latency & network quality monitoring |
+| 🌐 DNS Recursive | Unbound |
+| 🌐 DNS Reverse | BIND9 |
+| 📁 FTP | vsftpd |
+| ⏰ NTP | chrony / NTP.br |
+| ⚡ Speedtest | Ookla Speedtest CLI |
+| 🔌 Minha Conexão | Connection monitoring & diagnostics |
+| 🚦 nPerf | Throughput testing / iperf3 |
+| 📝 Graylog | Centralized logging |
+| 🗺️ phpIPAM | IP address management |
+| 🛡️ Krill | RPKI Certificate Authority |
 
-This includes commonly used administrative aliases and utilities such as:
-
-* `fzf`
-* `grc`
-* `bash-completion`
-* Colored command output
-* Customized `ls` aliases
-* Network-oriented command aliases
-* Standardized shell prompt
-
-The purpose is to provide a consistent operational environment across managed servers.
-
----
-
-## SSH Key Management
-
-The provisioning workflow supports adding a predefined public SSH key to:
-
-```text
-/root/.ssh/authorized_keys
-```
-
-Appropriate permissions are applied to the SSH directory and authorized keys file.
-
-> **Security consideration:** Public keys embedded in provisioning scripts should be reviewed and managed according to the organization's access-control policy.
+Modular by design — drop in a new service without touching the core engine.
 
 ---
 
-## Login Banners
-
-The project supports both pre-authentication and post-authentication banners.
-
-### Pre-authentication
-
-The `/etc/issue.net` banner provides an access notice before authentication.
-
-### Post-authentication
-
-A dynamic profile script displays operational information after login, including:
-
-* Hostname
-* Local IP address
-* Current date and time
-* Administrative access notice
-
-This provides administrators with immediate context when connecting to infrastructure servers.
-
----
-
-# Service Catalog
-
-Setup Server is designed around the operational requirements commonly found in ISP environments.
-
-The current service modules include:
-
-| Service       | Technology / Purpose                   |
-| ------------- | -------------------------------------- |
-| Monitoring    | Zabbix Agent 2                         |
-| SmokePing     | Latency and network quality monitoring |
-| DNS Recursive | Unbound                                |
-| DNS Reverse   | BIND9                                  |
-| FTP           | vsftpd                                 |
-| NTP           | chrony / NTP.br                        |
-| Speedtest     | Ookla Speedtest CLI                    |
-| Minha Conexão | Connection monitoring and diagnostics  |
-| nPerf         | Throughput testing / iperf3            |
-| Graylog       | Centralized logging                    |
-| phpIPAM       | IP address management                  |
-| Krill         | RPKI Certificate Authority             |
-
-The service catalog is intentionally modular so additional infrastructure components can be incorporated without changing the overall architecture.
-
----
-
-# Interactive Interface
-
-Setup Server uses `dialog` to provide an interactive terminal interface.
-
-The administrator can select multiple operations during the initial provisioning process.
+## 🖥️ Interactive Interface
 
 ```text
 UP-ISP :: Setup do servidor
@@ -299,79 +227,26 @@ UP-ISP :: Setup do servidor
 [ ] LIMPEZA
 ```
 
-Service deployment has its own selection interface, allowing the administrator to provision only the components required for a particular server.
-
-This makes it possible to use the same provisioning tool for different roles within the infrastructure.
-
-For example:
+One tool, many server roles:
 
 ```text
-DNS Server
-    └── DNS Recursive
-    └── DNS Reverse
-
-Monitoring Server
-    └── Zabbix
-    └── SmokePing
-
-Logging Server
-    └── Graylog
-
-Network Tools Server
-    └── Speedtest
-    └── nPerf
-    └── NTP
+🌐 DNS Server        📊 Monitoring Server   📝 Logging Server    🚦 Network Tools Server
+└── DNS Recursive    └── Zabbix             └── Graylog          └── Speedtest
+└── DNS Reverse      └── SmokePing                               └── nPerf
+                                                                   └── NTP
 ```
 
 ---
 
-# Logging
+## 📦 Installation
 
-Execution logs are maintained during the provisioning process.
-
-The main log file is:
-
-```text
-/var/log/upisp-setup.log
-```
-
-APT operations are temporarily recorded in:
-
-```text
-/tmp/upisp-apt.log
-```
-
-The logging mechanism is intended to facilitate troubleshooting, auditing, and operational verification after provisioning.
-
----
-
-# Requirements
-
-The project currently targets Debian-based Linux servers.
-
-Recommended environment:
-
-* Debian 12 (Bookworm)
-* Root privileges
-* Internet connectivity
-* APT package manager
-* Bash
-* `systemd`
-* `dialog`
-
-Some service modules may have additional requirements depending on their implementation.
-
----
-
-# Installation
-
-For a clean Debian installation, execute the bootstrap command as `root`:
+**⚡ One-liner** (clean Debian, run as `root`):
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Glledson/Setup_Server/main/install.sh)"
 ```
 
-Alternatively, clone the repository and execute the setup manually:
+**🔧 Manual:**
 
 ```bash
 git clone https://github.com/Glledson/Setup_Server.git
@@ -382,122 +257,106 @@ chmod +x setup_server.sh
 
 ---
 
-# Operational Considerations
+## 📝 Logging
 
-Setup Server performs system-level modifications.
-
-Before deploying it to production, review the configuration of the modules being executed.
-
-Particular attention should be given to:
-
-* SSH access
-* Firewall rules
-* APT repositories
-* Root SSH keys
-* Network configuration
-* Service ports
-* Existing services
-* Existing configuration files
-
-The provisioning process should preferably be tested in a controlled environment before being applied to critical infrastructure.
+| Log | Path |
+|---|---|
+| Main provisioning log | `/var/log/upisp-setup.log` |
+| Temporary APT log | `/tmp/upisp-apt.log` |
 
 ---
 
-# Design Principles
+## ✅ Requirements
 
-The project is guided by a few operational principles.
+- Debian 12 (Bookworm)
+- Root privileges
+- Internet connectivity
+- `apt` · `bash` · `systemd` · `dialog`
 
-### Reproducibility
-
-The same provisioning procedure should produce a consistent baseline.
-
-### Modularity
-
-Services should remain independent from the core system configuration.
-
-### Transparency
-
-System modifications should be identifiable and logged.
-
-### Maintainability
-
-The project should remain simple enough to be understood and maintained by infrastructure engineers.
-
-### Operational Efficiency
-
-Automation should eliminate repetitive tasks without hiding important administrative decisions.
+Some service modules have extra dependencies — check the script under `scripts/services/`.
 
 ---
 
-# Roadmap
+## ⚠️ Operational Considerations
 
-Planned improvements include:
+Setup Server makes **system-level changes**. Before running against production, review:
 
-* [ ] Debian version detection
-* [ ] Installation profiles
-* [ ] Non-interactive provisioning mode
-* [ ] Service dependency management
-* [ ] Post-installation validation
-* [ ] Improved error handling
-* [ ] Provisioning reports
-* [ ] Configuration rollback
-* [ ] Centralized service configuration
-* [ ] Expanded ISP service catalog
-* [ ] Improved Debian 13 support
-* [ ] Modular plugin architecture
+- SSH access & firewall rules
+- APT repositories
+- Root SSH keys
+- Network configuration & service ports
+- Existing services/configs that could conflict
+
+> 🧪 **Test in staging first.** Always.
 
 ---
 
-# Contributing
+## 🧭 Design Principles
 
-Contributions are welcome.
-
-New service modules should follow the project's modular approach and avoid introducing unnecessary dependencies into the core provisioning engine.
-
-When contributing a new module, consider:
-
-1. Clearly define the service requirements.
-2. Keep service-specific logic isolated.
-3. Validate configurations before restarting services.
-4. Provide meaningful logging.
-5. Avoid hard-coded environment-specific values whenever possible.
-6. Document operational requirements and exposed ports.
+| Principle | What it means here |
+|---|---|
+| 🔁 **Reproducibility** | Same procedure → same baseline, every time |
+| 🧩 **Modularity** | Services stay independent from the core |
+| 👁️ **Transparency** | Every change is identifiable and logged |
+| 🛠️ **Maintainability** | Simple enough for any infra engineer to extend |
+| ⚙️ **Operational Efficiency** | Automate the repetitive — never hide a decision |
 
 ---
 
-# Security
+## 🗺️ Roadmap
 
-This project operates with **root privileges** and can modify critical operating system components.
-
-Always inspect the source code before executing provisioning scripts obtained from external locations.
-
-In particular, review:
-
-* SSH configuration
-* Embedded SSH keys
-* Repository definitions
-* Service configuration
-* Network ports
-* Privileged commands
-
-Never deploy an unreviewed provisioning script directly to critical production infrastructure.
+- [ ] Debian version detection
+- [ ] Installation profiles
+- [ ] Non-interactive provisioning mode
+- [ ] Service dependency management
+- [ ] Post-installation validation
+- [ ] Improved error handling
+- [ ] Provisioning reports
+- [ ] Configuration rollback
+- [ ] Centralized service configuration
+- [ ] Expanded ISP service catalog
+- [ ] Improved Debian 13 support
+- [ ] Modular plugin architecture
 
 ---
 
-# License
+## 🤝 Contributing
 
-This project is distributed under the **MIT License**.
+Contributions welcome! New service modules should follow the existing modular pattern.
 
-See the `LICENSE` file for the complete license text.
+1. Clearly define the service's requirements
+2. Keep service-specific logic isolated
+3. Validate config before restarting any service
+4. Provide meaningful, structured logging
+5. Avoid hard-coded environment-specific values
+6. Document requirements and exposed ports
+
+---
+
+## 🔒 Security
+
+Runs with **root privileges** and can touch critical OS components. Always review the source before running scripts from an external location:
+
+- SSH configuration & embedded keys
+- Repository definitions
+- Service configuration & network ports
+- Any privileged command
+
+> 🚫 **Never run an unreviewed script directly against critical production infrastructure.**
+
+---
+
+## 📄 License
+
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for the full text.
 
 ---
 
 <div align="center">
 
 **Setup Server**
-
 *Infrastructure provisioning for ISP environments.*
 
-**Linux · Networking · Automation · Infrastructure · ISP**
+`Linux` · `Networking` · `Automation` · `Infrastructure` · `ISP`
 
 </div>
