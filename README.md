@@ -4,17 +4,19 @@
 
 **Server provisioning and infrastructure automation for ISP environments.**
 
-![Debian](https://img.shields.io/badge/Debian-12%20Bookworm-A81D33?style=for-the-badge&logo=debian&logoColor=white)
+![Debian](https://img.shields.io/badge/Debian-13%20Trixie-A81D33?style=for-the-badge&logo=debian&logoColor=white)
 ![Bash](https://img.shields.io/badge/Bash-5.x-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Linux-333333?style=for-the-badge&logo=linux&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-2F80ED?style=for-the-badge)
+
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=20&pause=1000&color=4EAA25&center=true&vCenter=true&width=650&lines=Provision+Debian+ISP+servers+in+minutes;DNS+%C2%B7+Monitoring+%C2%B7+Logging+%C2%B7+RPKI+%C2%B7+NTP;One+command.+Zero+repetition.)](https://git.io/typing-svg)
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/Glledson/Setup_Server?style=flat-square&color=orange)
 ![GitHub stars](https://img.shields.io/github/stars/Glledson/Setup_Server?style=flat-square&color=yellow)
 ![GitHub issues](https://img.shields.io/github/issues/Glledson/Setup_Server?style=flat-square&color=red)
 ![Maintained](https://img.shields.io/badge/Maintained%3F-yes-brightgreen?style=flat-square)
 
-*Turn a fresh Debian install into a fully hardened, monitored, production-ready ISP server — with one command.*
+*Turn a fresh Debian 13 install into a fully hardened, monitored, production-ready ISP server — with one command.*
 
 [**Install**](#-installation) · [**Services**](#-service-catalog) · [**Architecture**](#-architecture) · [**Contributing**](#-contributing)
 
@@ -28,7 +30,7 @@
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Glledson/Setup_Server/main/install.sh)"
 ```
 
-Run it as `root` on a clean Debian 12 box, pick what you need from the interactive menu, and walk away with a hardened, monitored server. Full details below. ⬇️
+Run it as `root` on a clean Debian 13 box, pick what you need from the interactive menu, and walk away with a hardened, monitored server. Full details below. ⬇️
 
 ---
 
@@ -76,7 +78,7 @@ setup_server/
 │
 ├── config/
 │   ├── issue.net
-│   ├── sources.list.bookworm
+│   ├── sources.list.trixie
 │   └── vimrc
 │
 ├── lib/
@@ -257,6 +259,20 @@ chmod +x setup_server.sh
 
 ---
 
+
+<details>
+<summary><b>🧾 Quick command cheatsheet</b></summary>
+
+| Task | Command |
+|---|---|
+| Run full interactive setup | `./setup_server.sh` |
+| Re-run just the service menu | `./scripts/services/menu.sh` *(if available)* |
+| Check the last provisioning run | `tail -f /var/log/upisp-setup.log` |
+| Validate SSH config manually | `sshd -t` |
+| Check the custom SSH port is listening | `ss -tlnp \| grep 29019` |
+
+</details>
+
 ## 📝 Logging
 
 | Log | Path |
@@ -268,7 +284,7 @@ chmod +x setup_server.sh
 
 ## ✅ Requirements
 
-- Debian 12 (Bookworm)
+- Debian 13 (Trixie)
 - Root privileges
 - Internet connectivity
 - `apt` · `bash` · `systemd` · `dialog`
@@ -315,7 +331,9 @@ Setup Server makes **system-level changes**. Before running against production, 
 - [ ] Configuration rollback
 - [ ] Centralized service configuration
 - [ ] Expanded ISP service catalog
-- [ ] Improved Debian 13 support
+- [x] Debian 13 (Trixie) support
+- [ ] Debian 14 forward-compatibility testing
+- [ ] Legacy Debian 12 (Bookworm) fallback mode
 - [ ] Modular plugin architecture
 
 ---
@@ -349,6 +367,13 @@ Runs with **root privileges** and can touch critical OS components. Always revie
 ## 📄 License
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for the full text.
+
+
+---
+
+## 📈 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Glledson/Setup_Server&type=Date)](https://star-history.com/#Glledson/Setup_Server&Date)
 
 ---
 
