@@ -91,17 +91,7 @@ setup_server/
 │   │
 │   └── services/
 │       ├── dns-recursivo.sh
-│       ├── dns-reverso.sh
-│       ├── ftp.sh
-│       ├── graylog.sh
-│       ├── krill.sh
-│       ├── minha-conexao.sh
-│       ├── monitoring.sh
-│       ├── nperf.sh
-│       ├── ntp.sh
-│       ├── phpipam.sh
-│       ├── smokeping.sh
-│       └── speedtest.sh
+│       └── monitoring.sh
 │
 ├── install.sh
 ├── setup_server.sh
@@ -115,9 +105,13 @@ setup_server/
 | 📁 `config/` | Configuration templates & system-level files |
 | 📁 `lib/` | Reusable Bash functions shared across modules |
 | 📁 `scripts/` | Numbered core system-preparation stages |
-| 📁 `scripts/services/` | One isolated script per service |
+| 📁 `scripts/services/` | One isolated standalone script per service |
 | 🎛️ `setup_server.sh` | Interactive `dialog`-based orchestrator |
 | 🥾 `install.sh` | One-line bootstrap script |
+
+The orchestrator sources `lib/` and the numbered `scripts/` stages, keeping
+only the menu and service dispatch logic. Each service is a standalone script
+under `scripts/services/` invoked as a subprocess.
 
 ---
 
@@ -179,9 +173,11 @@ APT setup · full upgrade · admin utilities · Bash completion · Vim config ·
 `fzf` · `grc` · `bash-completion` · colored output · custom `ls`/network aliases · standardized prompt.
 
 ### 🔑 SSH Key Management
-Drops a predefined public key into `/root/.ssh/authorized_keys` with correct permissions.
+Adds your public key to `/root/.ssh/authorized_keys` with correct permissions.
+The key can be provided interactively or via the `SSH_PUB_KEY` environment variable.
 
-> 🔒 **Security note:** review and rotate embedded keys per your org's access-control policy.
+> 🔒 **Security note:** no keys are embedded in the repository. Always review and
+> rotate access keys per your org's access-control policy.
 
 ### 🪧 Login Banners
 - **Pre-auth:** `/etc/issue.net` shows an access notice before login.
@@ -193,20 +189,11 @@ Drops a predefined public key into `/root/.ssh/authorized_keys` with correct per
 
 | Service | Technology / Purpose |
 |---|---|
-| 📊 Monitoring | Zabbix Agent 2 |
-| 📈 SmokePing | Latency & network quality monitoring |
-| 🌐 DNS Recursive | Unbound |
-| 🌐 DNS Reverse | BIND9 |
-| 📁 FTP | vsftpd |
-| ⏰ NTP | chrony / NTP.br |
-| ⚡ Speedtest | Ookla Speedtest CLI |
-| 🔌 Minha Conexão | Connection monitoring & diagnostics |
-| 🚦 nPerf | Throughput testing / iperf3 |
-| 📝 Graylog | Centralized logging |
-| 🗺️ phpIPAM | IP address management |
-| 🛡️ Krill | RPKI Certificate Authority |
+| 📊 Monitoring | Zabbix (server + Agent 2) + Grafana |
+| 🌐 DNS Recursive | Unbound + FRR (BGP) |
 
-Modular by design — drop in a new service without touching the core engine.
+Modular by design — drop a new standalone script into `scripts/services/`
+and register it in the service menu of `setup_server.sh`.
 
 ---
 
@@ -232,10 +219,9 @@ UP-ISP :: Setup do servidor
 One tool, many server roles:
 
 ```text
-🌐 DNS Server        📊 Monitoring Server   📝 Logging Server    🚦 Network Tools Server
-└── DNS Recursive    └── Zabbix             └── Graylog          └── Speedtest
-└── DNS Reverse      └── SmokePing                               └── nPerf
-                                                                 └── NTP
+🌐 DNS Server        📊 Monitoring Server
+└── DNS Recursive    └── Zabbix + Grafana
+    (Unbound + FRR)
 ```
 
 ---
@@ -321,12 +307,11 @@ Setup Server makes **system-level changes**. Before running against production, 
 
 ## 🗺️ Roadmap
 
-- [ ] Debian version detection
 - [ ] Installation profiles
 - [ ] Non-interactive provisioning mode
 - [ ] Service dependency management
-- [ ] Post-installation validation
-- [ ] Improved error handling
+- [x] Post-installation validation
+- [x] Improved error handling
 - [ ] Provisioning reports
 - [ ] Configuration rollback
 - [ ] Centralized service configuration
@@ -335,6 +320,7 @@ Setup Server makes **system-level changes**. Before running against production, 
 - [ ] Debian 14 forward-compatibility testing
 - [ ] Legacy Debian 12 (Bookworm) fallback mode
 - [ ] Modular plugin architecture
+- [x] Debian version detection (`config/sources.list.*`)
 
 ---
 
