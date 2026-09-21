@@ -9,7 +9,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Linux-333333?style=for-the-badge&logo=linux&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-2F80ED?style=for-the-badge)
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=20&pause=1000&color=4EAA25&center=true&vCenter=true&width=650&lines=Provisione+servidores+ISP+em+minutos;DNS+%C2%B7+Monitoramento+%C2%B7+Hardening+SSH;Um+comando.+Zero+repeti%C3%A7%C3%A3o.)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=20&pause=1000&color=4EAA25&center=true&vCenter=true&width=650&lines=Provisione+servidores+ISP+em+minutos;DNS+%C2%B7+Monitoramento+%C2%B7+FTP+%C2%B7+Hardening+SSH;Um+comando.+Zero+repeti%C3%A7%C3%A3o.)](https://git.io/typing-svg)
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/Glledson/Setup_Server?style=flat-square&color=orange)
 ![GitHub issues](https://img.shields.io/github/issues/Glledson/Setup_Server?style=flat-square&color=red)
@@ -58,6 +58,7 @@ Implantar um servidor de produção vai além de instalar um SO. Este projeto au
 ✅ Customização do ambiente administrativo (vim, bash, aliases)
 ✅ Monitoramento com Zabbix + Grafana
 ✅ Infraestrutura DNS recursivo com Unbound + FRR (BGP)
+✅ Servidor FTP com Pure-FTPd + MariaDB
 
 Fazer isso manualmente em dezenas de servidores não escala — **o Setup Server transforma isso em um fluxo repetível, de um comando.**
 
@@ -88,6 +89,7 @@ Setup_Server/
 │   │
 │   └── services/
 │       ├── dns-recursivo.sh
+│       ├── ftp.sh
 │       └── monitoring.sh
 │
 ├── LICENSE
@@ -133,13 +135,13 @@ O orquestrador carrega (`source`) os módulos de `lib/` e os estágios numerados
                     ▼
           Provisionamento de Serviços
                     │
-        ┌───────────┴───────────┐
-        ▼                       ▼
-   Monitoramento          DNS Recursivo
-   Zabbix + Grafana       Unbound + FRR
-                    │
-                    ▼
-           Servidor em Produção
+        ┌───────────┬───────────┐
+        ▼           ▼           ▼
+   Monitoramento  DNS Recursivo    FTP
+   Zabbix+Graf   Unbound+FRR    Pure-FTPd
+                     │
+                     ▼
+          Servidor em Produção
 ```
 
 O administrador sempre mantém o controle sobre quais componentes entram em cada servidor.
@@ -183,6 +185,7 @@ Adiciona sua chave pública em `/root/.ssh/authorized_keys` com as permissões c
 |---|---|---|
 | 📊 Monitoramento | `scripts/services/monitoring.sh` | Zabbix (server + Agent 2) + Grafana |
 | 🌐 DNS Recursivo | `scripts/services/dns-recursivo.sh` | Unbound + FRR (BGP) |
+| 🗂️ FTP | `scripts/services/ftp.sh` | Pure-FTPd com backend MariaDB |
 
 Modular por design — basta adicionar um script standalone em `scripts/services/` e registrá-lo no menu do `setup_server.sh`.
 
@@ -210,8 +213,8 @@ UP-ISP :: Setup do servidor
 Uma ferramenta, vários papéis de servidor:
 
 ```text
-🌐 Servidor DNS       📊 Servidor de Monitoramento
-└── DNS Recursivo     └── Zabbix + Grafana
+🌐 Servidor DNS       📊 Servidor de Monitoramento   🗂️ Servidor FTP
+└── DNS Recursivo     └── Zabbix + Grafana          └── Pure-FTPd + MariaDB
     (Unbound + FRR)
 ```
 
@@ -244,11 +247,14 @@ O comportamento pode ser ajustado por variáveis de ambiente, sem editar os scri
 |---|---|---|---|
 | `SSH_PUB_KEY` | *(prompt interativo)* | Chave SSH | Chave pública adicionada em `/root/.ssh/authorized_keys` |
 | `SSH_PORT` | `29019` | Config. SSH | Porta SSH personalizada |
-| `DB_PASS` | `ZABBIX-UPISP` | Monitoramento | Senha do Zabbix / MariaDB |
+| `DB_PASS` | `ZABBIX-UPISP` | Monitoramento / FTP | Senha do Zabbix / usuário do banco do FTP |
 | `GRAFANA_VERSION` | `12.0.0` | Monitoramento | Versão do `.deb` do Grafana |
+| `DB_ROOT_PASS` | `FTP-UPISP` | FTP | Senha do MariaDB (use a mesma do Monitoramento em caso de coexistência) |
+| `FTP_PASS` | `FTP-UPISP` | FTP | Senha padrão das contas FTP semeadas |
+| `FTP_BASE_DIR` | `/var/pure-ftpd` | FTP | Diretório base das contas FTP |
 
 > ⚠️ **Sempre** defina um `DB_PASS` forte em produção (o padrão existe apenas para provisionamento).
-> O serviço `dns-recursivo.sh` também aceita flags de CLI: `--no-reboot`, `--skip-bgp`, `--asn XXXXX`.
+> O serviço `dns-recursivo.sh` também aceita flags de CLI: `--no-reboot`, `--skip-bgp`, `--asn XXXXX` e a variável `CLIENT_NET=CIDR` (rede de clientes; padrão: auto a partir da interface principal).
 
 ---
 

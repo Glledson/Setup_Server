@@ -2,7 +2,7 @@
 # =============================================================================
 # Script de Provisionamento: DNS Recursivo (Unbound) + BGP (FRR)
 # Compatível com: Debian 13 "Trixie" (kernel 6.12 LTS, systemd 257, FRR 10.3)
-# Versão: 3.1
+# Versão: 3.2
 # =============================================================================
 # USO: bash setup_trixie.sh [--no-reboot] [--skip-bgp] [--asn XXXXX]
 # =============================================================================
@@ -14,10 +14,9 @@ set -uo pipefail
 # =============================================================================
 
 readonly RUN_TS=$(date +%Y%m%d_%H%M%S)
-readonly VERSION="3.1-$(date +%Y%m%d)"
+readonly VERSION="3.2-$(date +%Y%m%d)"
 readonly SCRIPT_NAME=$(basename "$0")
 readonly LOG_FILE="/var/log/setup_trixie_${RUN_TS}.log"
-readonly SCRIPT_BLOCKLIST="/usr/local/bin/bloqueio_unbound.sh"
 readonly BACKUP_DIR="/root/setup_backup_${RUN_TS}"
 
 # IPs fixos dos loopbacks DNS
@@ -111,6 +110,7 @@ parse_args() {
                 echo "  --no-reboot   Não reinicia ao final"
                 echo "  --skip-bgp    Pula configuração BGP (equivalente a --asn 00000)"
                 echo "  --asn XXXXX   Define ASN sem prompt interativo (00000 = sem BGP)"
+                echo "  CLIENT_NET=CIDR  sobrescreve a rede de clientes (padrão: auto a partir da interface principal)"
                 exit 0
                 ;;
             *) warn "Argumento desconhecido: $1" ;;
@@ -205,12 +205,46 @@ except Exception:
     while (( s < UNBOUND_THREADS )); do s=$(( s * 2 )); done
     UNBOUND_SLABS=$(( s > 8 ? 8 : s ))
 
+    TOTAL_MEM_MB=$(awk '/^MemTotal/{print int($2/1024)}' /proc/meminfo 2>/dev/null)
+    [ -n "$TOTAL_MEM_MB" ] && [ "$TOTAL_MEM_MB" -gt 0 ] || TOTAL_MEM_MB=4096
+
+    local msg_cache=$(( TOTAL_MEM_MB * 15 / 100 ))
+    [ "$msg_cache" -lt 256 ] && msg_cache=256
+    [ "$msg_cache" -gt 4096 ] && msg_cache=4096
+    UNBOUND_MSG_CACHE="${msg_cache}m"
+
+    local rrset_cache=$(( TOTAL_MEM_MB * 10 / 100 ))
+    [ "$rrset_cache" -lt 128 ] && rrset_cache=128
+    [ "$rrset_cache" -gt 2048 ] && rrset_cache=2048
+    UNBOUND_RRSET_CACHE="${rrset_cache}m"
+
+    CONNTRACK_MAX=$(( TOTAL_MEM_MB / 2 * 1024 ))
+    [ "$CONNTRACK_MAX" -lt 1048576 ] && CONNTRACK_MAX=1048576
+    [ "$CONNTRACK_MAX" -gt 10485760 ] && CONNTRACK_MAX=10485760
+    CONNTRACK_BUCKETS=$(( CONNTRACK_MAX / 8 ))
+
+    CLIENT_NET="${CLIENT_NET:-}"
+    if [ -z "$CLIENT_NET" ]; then
+        local ipv4_cidr
+        ipv4_cidr=$(ip -4 -o addr show dev "$PRIMARY_IF" | awk '/inet /{print $4; exit}')
+        if [ -n "$ipv4_cidr" ] && command -v python3 &>/dev/null; then
+            CLIENT_NET=$(python3 -c "import ipaddress,sys;print(ipaddress.IPv4Network('${ipv4_cidr}',strict=False))" 2>/dev/null) || true
+        fi
+    fi
+
     info "Interface : $PRIMARY_IF"
     info "IPv4      : $ipv4_address  |  GW: $ipv4_gateway"
     if $HAS_IPV6; then
         info "IPv6      : $ipv6_address  |  GW: $ipv6_gateway  |  Prefixo: $IPV6_PREFIX"
     fi
     info "CPUs      : $CPU_CORES  |  Threads Unbound: $UNBOUND_THREADS  |  Slabs: $UNBOUND_SLABS"
+    info "RAM       : ${TOTAL_MEM_MB} MB  |  MSG cache: $UNBOUND_MSG_CACHE  |  RRset: $UNBOUND_RRSET_CACHE"
+    info "Conntrack : max=$CONNTRACK_MAX  buckets=$CONNTRACK_BUCKETS"
+    if [ -n "$CLIENT_NET" ]; then
+        info "Clients   : $CLIENT_NET"
+    else
+        warn "Rede de clientes não detectada (CLIENT_NET) — apenas /32 local e redes privadas serão permitidas."
+    fi
 }
 
 collect_asn() {
@@ -251,7 +285,7 @@ collect_asn() {
 install_bootstrap() {
     head "DEPENDÊNCIAS INICIAIS"
     step "Instalando whiptail, curl, wget, lsb-release..." \
-        apt-get install -y whiptail curl wget lsb-release ca-certificates gnupg > /dev/null 2>&1
+        apt-get install -y whiptail curl wget lsb-release python3 ca-certificates gnupg > /dev/null 2>&1
 }
 
 # =============================================================================
@@ -279,10 +313,13 @@ EOF
 # IPv6 loopbacks
 iface lo inet6 static
     address ${DNS_LO_IPV6_1}/128
-
-iface lo inet6 static
     address ${DNS_LO_IPV6_2}/128
 EOF
+    fi
+
+    if $HAS_IPV6; then
+        step_soft "Ativando loopbacks IPv6..." \
+            bash -c "ip -6 addr replace ${DNS_LO_IPV6_1}/128 dev lo; ip -6 addr replace ${DNS_LO_IPV6_2}/128 dev lo"
     fi
 
     step_soft "Subindo lo:0..." ifup lo:0 2>/dev/null
@@ -315,7 +352,9 @@ https://deb.frrouting.org/frr ${codename} frr-stable' \
 configure_kernel() {
     head "PARÂMETROS DE KERNEL (SYSCTL)"
 
-    cat > /etc/sysctl.d/99-isp-tuning.conf << 'SYSCTL'
+    : "${CONNTRACK_BUCKETS:=524288}" "${CONNTRACK_MAX:=4194304}"
+
+    cat > /etc/sysctl.d/99-isp-tuning.conf << SYSCTL
 # ISP Tuning — setup_trixie.sh
 vm.swappiness=10
 vm.vfs_cache_pressure=50
@@ -325,8 +364,8 @@ net.core.wmem_max=2147483647
 net.ipv4.tcp_rmem=4096 87380 2147483647
 net.ipv4.tcp_wmem=4096 65536 2147483647
 
-net.netfilter.nf_conntrack_buckets=512000
-net.netfilter.nf_conntrack_max=10000000
+net.netfilter.nf_conntrack_buckets=${CONNTRACK_BUCKETS}
+net.netfilter.nf_conntrack_max=${CONNTRACK_MAX}
 
 net.ipv4.ip_forward=1
 net.ipv6.conf.all.forwarding=1
@@ -407,6 +446,7 @@ restrict ::1
 NTP
 
     step "Reiniciando NTPsec..." systemctl restart ntpsec
+    step "Habilitando NTPsec no boot..." systemctl enable ntpsec
 }
 
 # =============================================================================
@@ -415,6 +455,13 @@ NTP
 
 configure_unbound() {
     head "UNBOUND — CONFIGURAÇÃO"
+
+    : "${UNBOUND_MSG_CACHE:=512m}" "${UNBOUND_RRSET_CACHE:=384m}"
+    local client_net_acl=""
+    if [ -n "$CLIENT_NET" ]; then
+        client_net_acl="    access-control: ${CLIENT_NET}          allow
+"
+    fi
 
     mkdir -p /var/log/unbound /var/lib/unbound
     touch /var/log/unbound/unbound.log /etc/unbound/bloqueio.conf
@@ -472,12 +519,12 @@ server:
     access-control: 127.0.0.1/32        allow
     access-control: ${DNS_LO_IPV4_1}/32 allow
     access-control: ${DNS_LO_IPV4_2}/32 allow
-    access-control: ${ipv4_address}/22  allow
+    access-control: ${ipv4_address}/32  allow
     access-control: 100.64.0.0/10       allow
     access-control: 192.168.0.0/16      allow
     access-control: 172.16.0.0/12       allow
     access-control: 10.0.0.0/8          allow
-    access-control: 0.0.0.0/0           refuse
+${client_net_acl}    access-control: 0.0.0.0/0           refuse
 ${acl_ipv6}
 
     verbosity: 1
@@ -493,10 +540,10 @@ ${acl_ipv6}
     so-sndbuf: 4m
 
     edns-buffer-size: 1232
-    msg-cache-size: 3G
+    msg-cache-size: ${UNBOUND_MSG_CACHE}
     msg-cache-slabs: ${UNBOUND_SLABS}
     num-queries-per-thread: 4096
-    rrset-cache-size: 2G
+    rrset-cache-size: ${UNBOUND_RRSET_CACHE}
     rrset-cache-slabs: ${UNBOUND_SLABS}
     infra-cache-slabs: ${UNBOUND_SLABS}
     key-cache-slabs: ${UNBOUND_SLABS}
@@ -640,6 +687,7 @@ FRRCONF
     rm -f "$tmp_frr"
 
     step "Reiniciando FRR..." systemctl restart frr.service
+    step "Habilitando FRR no boot..." systemctl enable frr.service
 }
 
 # =============================================================================

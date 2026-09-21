@@ -48,6 +48,7 @@ instalar_servicos() {
         --checklist "Selecione com ESPAÇO o que deseja executar e confirme com ENTER:" 20 78 6 \
         "MONITORAMENTO"  "Zabbix + Grafana"       OFF \
         "DNS RECURSIVO"  "Unbound + FRR (BGP)"   OFF \
+        "FTP"            "Pure-FTPd + MariaDB"   OFF \
         3>&1 1>&2 2>&3) || {
             log "Menu de serviços cancelado"
             return 0
@@ -61,6 +62,7 @@ instalar_servicos() {
         case "$item" in
             "MONITORAMENTO") instalar_servico "$SCRIPT_DIR/scripts/services/monitoring.sh" "MONITORAMENTO" ;;
             "DNS RECURSIVO")  instalar_servico "$SCRIPT_DIR/scripts/services/dns-recursivo.sh" "DNS RECURSIVO" ;;
+            "FTP")            instalar_servico "$SCRIPT_DIR/scripts/services/ftp.sh" "FTP" ;;
         esac
     done
 
@@ -86,7 +88,7 @@ mostrar_menu() {
         "SSHKEY"     "Adicionar chave SSH pública ao root"            OFF \
         "BANNERPRE"  "Banner pré-login (/etc/issue.net)"              OFF \
         "BANNERPOS"  "Banner pós-login dinâmico"                      OFF \
-        "SERVICOS"   "Instalar serviços (Zabbix, DNS, etc)"           OFF \
+        "SERVICOS"   "Instalar serviços (Zabbix, DNS, FTP etc)"      OFF \
         "LIMPEZA"    "Remover temporários ao final"                   OFF \
         3>&1 1>&2 2>&3
 }
