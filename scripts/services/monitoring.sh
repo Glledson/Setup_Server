@@ -124,13 +124,31 @@ EOF
 echo -e "${GREEN}OK${RESET}"
 
 echo -ne "Importando esquema Zabbix... "
-zcat /usr/share/zabbix/ui/sql-scripts/mysql/server.sql.gz \
+zcat /usr/share/zabbix/sql-scripts/mysql/server.sql.gz \
     | mysql --default-character-set=utf8mb4 -uzabbix -p"${DB_PASS}" zabbix
 echo -e "${GREEN}OK${RESET}"
 
 mariadb -u root -p"${DB_PASS}" <<EOF
 SET GLOBAL log_bin_trust_function_creators = 0;
 EOF
+
+cat > /etc/zabbix/web/zabbix.conf.php <<'ZABBIX_CONF_PHP'
+<?php
+// Zabbix GUI configuration file — gerado por monitoring.sh
+global $DB;
+
+$DB['TYPE']                = 'MYSQL';
+$DB['SERVER']              = 'localhost';
+$DB['PORT']                = '0';
+$DB['DATABASE']            = 'zabbix';
+$DB['USER']                = 'zabbix';
+$DB['PASSWORD']            = '__DBPASS__';
+$DB['SCHEMA']              = '';
+$DB['CHARSET']             = 'utf8mb4';
+$DB['DOUBLE_IEEE754_TOP_BIT'] = '0';
+ZABBIX_CONF_PHP
+sed -i "s#__DBPASS__#${DB_PASS}#" /etc/zabbix/web/zabbix.conf.php
+echo -e "${GREEN}zabbix.conf.php gerado${RESET}"
 
 # ─────────────────────────────────────────────────────────────
 # 7. PHP tuning
@@ -153,4 +171,56 @@ echo -e "${GREEN}OK${RESET}"
 systemctl restart zabbix-server zabbix-agent2 apache2
 echo -e "${GREEN}Zabbix Server + Agent + Apache reiniciados${RESET}"
 
-echo -e "\n${GREEN}>>> Configuração do monitoring concluída com sucesso!${RESET}"
+# ─────────────────────────────────────────────────────────────
+# 9. Arquivo de credenciais pós-instalação
+# ─────────────────────────────────────────────────────────────
+
+INFO_FILE="/root/monitoring_credenciais.txt"
+SERVER_IP=""
+while read -r pref; do
+    ip="${pref%/*}"
+    case "$ip" in
+        127.*|169.254.*) continue ;;
+    esac
+    SERVER_IP="$ip"
+    break
+done < <(ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}')
+[ -n "$SERVER_IP" ] || SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+
+{
+    echo "================================================================"
+    echo " UP-ISP — Informações pós-instalação (monitoramento)"
+    echo " Gerado em: $(date '+%Y-%m-%d %H:%M:%S') em $(hostname -f 2>/dev/null || hostname)"
+    echo "================================================================"
+    echo
+    echo "== SERVIDOR =="
+    echo "  IP: $SERVER_IP"
+    echo
+    echo "== ZABBIX  (http://$SERVER_IP/zabbix/) =="
+    echo "  Usuário frontend: Admin"
+    echo "  Senha frontend  : zabbix   (alterar no primeiro login)"
+    echo "  Banco de dados  : zabbix"
+    echo "  Usuário BD      : zabbix"
+    echo "  Senha BD        : $DB_PASS"
+    echo
+    echo "== MARIADB (banco Zabbix) =="
+    echo "  Usuário: zabbix"
+    echo "  Senha  : $DB_PASS"
+    echo "  Acesso : mariadb -u zabbix -p${DB_PASS} zabbix"
+    echo
+    echo "== GRAFANA  (http://$SERVER_IP:3000/) =="
+    echo "  Usuário: admin"
+    echo "  Senha  : admin   (alterar no primeiro login)"
+    echo
+    echo "== STATUS DOS SERVIÇOS =="
+    for svc in apache2 mariadb zabbix-server zabbix-agent2 grafana-server; do
+        printf "  %-15s : %s\n" "$svc" "$(systemctl is-active "$svc" 2>/dev/null)"
+    done
+    echo
+    echo "!! Guarde este arquivo em local seguro, chmod 600 já aplicado. !!"
+    echo "================================================================"
+} > "$INFO_FILE"
+chmod 600 "$INFO_FILE"
+
+echo -e "\n${GREEN}>>> Credenciais pós-instalação salvas em: $INFO_FILE${RESET}"
+echo -e "${GREEN}>>> Configuração do monitoring concluída com sucesso!${RESET}"
