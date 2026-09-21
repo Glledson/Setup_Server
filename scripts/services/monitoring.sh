@@ -34,7 +34,18 @@ echo -e "${GREEN}Zabbix repo OK${RESET}"
 wget -q "https://dl.grafana.com/oss/release/grafana_${GRAFANA_VERSION}+security~01_amd64.deb"
 dpkg -i "grafana_${GRAFANA_VERSION}+security~01_amd64.deb"
 rm -f "grafana_${GRAFANA_VERSION}+security~01_amd64.deb"
-echo -e "${GREEN}Grafana repo OK${RESET}"
+echo -e "${GREEN}Grafana pacote OK${RESET}"
+
+echo -ne "Habilitando e iniciando grafana-server... "
+systemctl daemon-reload
+if ! grep -qE '^\s*http_addr' /etc/grafana/grafana.ini; then
+    sed -i '/^\[server\]/a http_addr = 0.0.0.0' /etc/grafana/grafana.ini
+fi
+if systemctl enable --now grafana-server > /dev/null 2>&1 && systemctl is-active --quiet grafana-server; then
+    echo -e "${GREEN}OK${RESET}"
+else
+    echo -e "${YELLOW}FALHA — veja: journalctl -u grafana-server --no-pager -n 50${RESET}"
+fi
 
 # ─────────────────────────────────────────────────────────────
 # 3. Atualização do sistema
@@ -112,13 +123,19 @@ echo -e "${GREEN}Apache OK${RESET}"
 echo -e "${BLUE}>>> Configurando MariaDB para Zabbix...${RESET}"
 
 echo -ne "Configurando credenciais... "
-mariadb -u root <<EOF
+MYSQL_ROOT=(mariadb -u root)
+if ! mariadb -u root -e 'SELECT 1' > /dev/null 2>&1; then
+    MYSQL_ROOT=(mariadb -u root -p"${DB_PASS}")
+fi
+"${MYSQL_ROOT[@]}" <<EOF
 USE mysql;
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_PASS}';
-FLUSH PRIVILEGES;
+DROP DATABASE IF EXISTS zabbix;
 CREATE DATABASE zabbix CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+DROP USER IF EXISTS 'zabbix'@'localhost';
 CREATE USER 'zabbix'@'localhost' IDENTIFIED BY '${DB_PASS}';
 GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost';
+FLUSH PRIVILEGES;
 SET GLOBAL log_bin_trust_function_creators = 1;
 EOF
 echo -e "${GREEN}OK${RESET}"
@@ -126,6 +143,11 @@ echo -e "${GREEN}OK${RESET}"
 echo -ne "Importando esquema Zabbix... "
 zcat /usr/share/zabbix/sql-scripts/mysql/server.sql.gz \
     | mysql --default-character-set=utf8mb4 -uzabbix -p"${DB_PASS}" zabbix
+echo -e "${GREEN}OK${RESET}"
+
+echo -ne "Definindo idioma padrão (pt_BR)... "
+mysql -uzabbix -p"${DB_PASS}" zabbix \
+    -e "UPDATE settings SET value_str='pt_BR' WHERE name='default_lang';"
 echo -e "${GREEN}OK${RESET}"
 
 mariadb -u root -p"${DB_PASS}" <<EOF
@@ -168,8 +190,8 @@ echo -e "${BLUE}>>> Configurando Zabbix Server...${RESET}"
 sed -i "s/# DBPassword=/DBPassword=${DB_PASS}/" /etc/zabbix/zabbix_server.conf
 echo -e "${GREEN}OK${RESET}"
 
-systemctl restart zabbix-server zabbix-agent2 apache2
-echo -e "${GREEN}Zabbix Server + Agent + Apache reiniciados${RESET}"
+systemctl restart zabbix-server zabbix-agent2 apache2 grafana-server
+echo -e "${GREEN}Zabbix Server + Agent + Apache + Grafana reiniciados${RESET}"
 
 # ─────────────────────────────────────────────────────────────
 # 9. Arquivo de credenciais pós-instalação
