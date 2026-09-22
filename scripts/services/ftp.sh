@@ -121,7 +121,7 @@ MYSQLSocket /var/run/mysqld/mysqld.sock
 MYSQLUser $DB_USER
 MYSQLPassword $DB_PASS
 MYSQLDatabase $DB_NAME
-MYSQLCrypt md5
+MYSQLCrypt cleartext
 MYSQLGetPW SELECT Password FROM ftpd WHERE User="\L" AND status="1" AND (ipaccess = "*" OR ipaccess LIKE "\R")
 MYSQLGetUID SELECT Uid FROM ftpd WHERE User="\L" AND status="1" AND (ipaccess = "*" OR ipaccess LIKE "\R")
 MYSQLGetGID SELECT Gid FROM ftpd WHERE User="\L" AND status="1" AND (ipaccess = "*" OR ipaccess LIKE "\R")
@@ -159,7 +159,8 @@ for entry in "ftp-mk:mk" "ftp-sw:sw" "ftp-bgp:bgp" "ftp-olt:olt" "ftp-erp:erp" "
     subdir="${entry##*:}"
     mkdir -p "${FTP_BASE_DIR}/${subdir}"
     chown "${FTP_UID_GID}:${FTP_UID_GID}" "${FTP_BASE_DIR}/${subdir}"
-    "${MYSQL_ROOT[@]}" -e "USE ${DB_NAME}; INSERT IGNORE INTO ftpd (User, status, Password, Uid, Gid, Dir) VALUES ('${user}', '1', MD5('${FTP_PASS}'), '${FTP_UID_GID}', '${FTP_UID_GID}', '${FTP_BASE_DIR}/${subdir}');" > /dev/null 2>&1
+    "${MYSQL_ROOT[@]}" -e "USE ${DB_NAME}; INSERT IGNORE INTO ftpd (User, status, Password, Uid, Gid, Dir) VALUES ('${user}', '1', '${FTP_PASS}', '${FTP_UID_GID}', '${FTP_UID_GID}', '${FTP_BASE_DIR}/${subdir}')
+        ON DUPLICATE KEY UPDATE Password=VALUES(Password), status=VALUES(status), Dir=VALUES(Dir);" > /dev/null 2>&1
 done
 exibir_resultado $?
 
@@ -176,8 +177,8 @@ echo " Serviço : pure-ftpd-mysql ($(systemctl is-active pure-ftpd-mysql 2>/dev/
 echo " Banco   : ${DB_NAME} | usuário: ${DB_USER}"
 echo " Base    : ${FTP_BASE_DIR}"
 echo " Contas semeadas: ftp-mk, ftp-sw, ftp-bgp, ftp-olt, ftp-erp, ftp-srv"
-echo " Senha padrão das contas: ${FTP_PASS}  (MD5 armazenado)"
+echo " Senha padrão das contas: ${FTP_PASS}  (cleartext armazenado)"
 echo " Ajuste contas em: mariadb -u root -p${DB_ROOT_PASS} ${DB_NAME}"
-echo "   UPDATE ftpd SET Password=MD5('NOVA') WHERE User='ftp-mk';"
+echo "   UPDATE ftpd SET Password='NOVA' WHERE User='ftp-mk';"
 echo "--------------------------------------------------------------"
 echo -e "${RESET}"
