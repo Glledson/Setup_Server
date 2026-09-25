@@ -6,6 +6,12 @@ set -euo pipefail
 REPO_URL="https://github.com/Glledson/Setup_Server.git"
 CLONE_DIR="/root/Setup_Server"
 
+cleanup() {
+    cd / || true
+    rm -rf "$CLONE_DIR"
+    echo "Repositório removido: $CLONE_DIR"
+}
+
 if [ "$EUID" -ne 0 ]; then
     echo "Execute este script como root."
     exit 1
@@ -22,4 +28,6 @@ rm -rf "$CLONE_DIR"
 git clone --depth 1 "$REPO_URL" "$CLONE_DIR"
 cd "$CLONE_DIR"
 chmod +x setup_server.sh
-exec bash setup_server.sh "$@"
+
+trap cleanup EXIT
+bash setup_server.sh "$@"
